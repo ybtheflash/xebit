@@ -1,0 +1,23 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@font-face {
+  font-family: "Horizon";
+  src: url("/fonts/Horizon.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Mistrully";
+  src: url("/fonts/Mistrully.ttf") format("truetype");
+}
+
+body {
+  background-color: #070707;
+  color: #ffffff;
+}
+
+.bg-pattern {
+  background-image: radial-gradient(#ffffff 1px, transparent 1px);
+  background-size: 50px 50px;
+}
