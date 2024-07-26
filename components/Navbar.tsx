@@ -2,7 +2,10 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useSession, signOut } from "next-auth/react";
-
+const handleLogout = () => {
+  localStorage.removeItem("emailVerified");
+  signOut();
+};
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
@@ -47,7 +50,7 @@ const Navbar: React.FC = () => {
                   </span>
                 </Link>
                 <button
-                  onClick={() => signOut()}
+                  onClick={handleLogout}
                   className="text-white hover:text-primary transition-colors duration-200 ml-4"
                 >
                   Sign Out

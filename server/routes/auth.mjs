@@ -1,38 +1,60 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "../models/User.mjs";
+import { getAppwriteConfig } from "../../lib/appwrite.mjs";
+import { ID, Query } from "node-appwrite";
 
 const router = express.Router();
 
-// Register route
 router.post("/register", async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
+  const { databases, DATABASE_ID, USERS_COLLECTION_ID } = getAppwriteConfig();
 
-    // Check if user already exists
-    let user = await User.findOne({ $or: [{ email }, { username }] });
-    if (user) {
-      return res.status(400).json({ message: "User already exists" });
+  try {
+    const { username, email, password, registeredOn } = req.body;
+
+    // Check if username already exists
+    const existingUsername = await databases.listDocuments(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      [Query.equal("username", username)]
+    );
+
+    if (existingUsername.documents.length > 0) {
+      return res.status(400).json({ message: "Username already exists" });
     }
 
-    // Create new user
-    user = new User({
-      username,
-      email,
-      password,
-    });
+    // Check if email already exists
+    const existingEmail = await databases.listDocuments(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      [Query.equal("email", email)]
+    );
+
+    if (existingEmail.documents.length > 0) {
+      return res.status(400).json({ message: "E-mail already registered" });
+    }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    await user.save();
+    // Create new user
+    const user = await databases.createDocument(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      ID.unique(),
+      {
+        username,
+        email,
+        password: hashedPassword,
+        registeredOn,
+      }
+    );
 
     // Create and return JWT token
     const payload = {
       user: {
-        id: user.id,
+        id: user.$id,
       },
     };
 
@@ -53,14 +75,27 @@ router.post("/register", async (req, res) => {
 
 // Login route
 router.post("/login", async (req, res) => {
+  const { databases, DATABASE_ID, USERS_COLLECTION_ID } = getAppwriteConfig();
+  // console.log("Login route - Appwrite config:", {
+  //   DATABASE_ID,
+  //   USERS_COLLECTION_ID,
+  // });
+
   try {
     const { username, password } = req.body;
 
     // Check if user exists
-    let user = await User.findOne({ username });
-    if (!user) {
+    const users = await databases.listDocuments(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      [Query.equal("username", username)]
+    );
+
+    if (users.documents.length === 0) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+
+    const user = users.documents[0];
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
@@ -71,7 +106,7 @@ router.post("/login", async (req, res) => {
     // Create and return JWT token
     const payload = {
       user: {
-        id: user.id,
+        id: user.$id,
       },
     };
 

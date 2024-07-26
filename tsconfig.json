@@ -19,6 +19,6 @@
         "@/*": ["./*"]
       }
     },
-    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "types/**/*.d.ts", "server/index.mjs", "server/routes/user.mjs", "server/routes/auth.mjs", "server/models/User.mjs", "server/middleware/auth.mjs"],
+    "include": ["next-env.d.ts","types/next-auth.d.ts", "**/*.ts", "**/*.tsx", "**/*.mjs", "types/**/*.d.ts", "server/index.mjs", "server/routes/user.mjs", "server/routes/auth.mjs", "server/models/User.mjs", "server/middleware/auth.mjs", "lib/appwrite.mjs", "lib/**/*.ts", "lib/emailService.mjs"],
     "exclude": ["node_modules"]
   }

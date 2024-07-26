@@ -1,21 +1,22 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import mongoose from "mongoose";
-import authRoutes from "./routes/auth.mjs";
-import userRoutes from "./routes/user.mjs";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
-import path from "path";
+import { dirname, join } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
+dotenv.config({ path: join(__dirname, "..", ".env.local") });
 
 const app = express();
 
+import { getAppwriteConfig } from "../lib/appwrite.mjs";
+
+const { databases, DATABASE_ID, USERS_COLLECTION_ID } = getAppwriteConfig();
+
+import authRoutes from "./routes/auth.mjs";
+import userRoutes from "./routes/user.mjs";
 // Enable CORS for all routes
 app.use(cors());
 
@@ -28,22 +29,14 @@ app.use("/users", userRoutes);
 
 const PORT = process.env.PORT || 5001;
 
-// Connect to MongoDB
-const MONGODB_URI = process.env.MONGODB_URI;
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
-    console.log("Connected to MongoDB");
-    // Start the server after successful database connection
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => console.error("Error connecting to MongoDB:", err));
-
 // Health check route
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running" });
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 // Handle unhandled promise rejections

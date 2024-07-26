@@ -1,16 +1,13 @@
 import jwt from "jsonwebtoken";
+import { getAppwriteConfig } from "../../lib/appwrite.mjs";
 
-const auth = (req, res, next) => {
-  // Get token from Authorization header
+const auth = async (req, res, next) => {
+  const { databases, DATABASE_ID, USERS_COLLECTION_ID } = getAppwriteConfig();
+
+  // Get token from header
   const authHeader = req.header("Authorization");
 
-  // Check if no auth header
-  if (!authHeader) {
-    return res.status(401).json({ msg: "No token, authorization denied" });
-  }
-
-  // Extract token from Bearer token
-  const token = authHeader.split(" ")[1];
+  const token = authHeader?.replace("Bearer ", "");
 
   // Check if no token
   if (!token) {
@@ -21,10 +18,27 @@ const auth = (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Add user from payload to request
-    req.user = decoded.user;
-    next();
+    // Check if user exists in Appwrite
+    try {
+      const user = await databases.getDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        decoded.userId
+      );
+
+      if (!user) {
+        return res.status(401).json({ msg: "Token is not valid" });
+      }
+
+      // Add full user object to request
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error("Error fetching user from Appwrite:", error);
+      return res.status(401).json({ msg: "Token is not valid" });
+    }
   } catch (err) {
+    console.error("Error verifying token:", err);
     res.status(401).json({ msg: "Token is not valid" });
   }
 };

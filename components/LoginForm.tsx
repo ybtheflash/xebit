@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import Modal from "../components/Modal";
+import RegisterForm from "../components/RegisterForm";
 
 const LoginForm: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -8,8 +10,17 @@ const LoginForm: React.FC = () => {
   const [secretKey, setSecretKey] = useState("");
   const [error, setError] = useState("");
   const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
+
+  useEffect(() => {
+    const errorMessage = router.query.error;
+    if (errorMessage === "Too Many Requests") {
+      setError("Too many login attempts, please try again later.");
+      setShowModal(true);
+    }
+  }, [router.query]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,10 +117,13 @@ const LoginForm: React.FC = () => {
           Log In
         </button>
       </form>
-      <div className="mt-4">
-        <p>Don't have an account?</p>
-        <form onSubmit={handleSecretKeySubmit} className="mt-2"></form>
-      </div>
+      {showModal && (
+        <Modal
+          title="Rate Limit Exceeded"
+          message={error}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </div>
   );
 };
